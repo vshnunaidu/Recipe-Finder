@@ -31,7 +31,7 @@ class RecipeSearchEngine:
         N = len(self.recipes_df)
         ingredient_doc_count = {}
         
-        # Count documents containing each ingredient
+        # Count documents containing each ingred.
         for idx, row in self.recipes_df.iterrows():
             ingredients = self._get_ingredients_list(row['ingredients'])
             # Create a single string of all ingredients for partial matching
@@ -64,23 +64,28 @@ class RecipeSearchEngine:
         
         for q_ingredient in query_ingredients:
             q_ingredient = q_ingredient.lower().strip()
-            # Check for partial matches
-            tf = 1 if q_ingredient in ingredient_text else 0
-            if tf == 0:
-                continue
+            # More lenient matching - check for partial matches
+            tf = sum(1 for ing in recipe_ingredients if q_ingredient in ing.lower())
+            if tf == 0 and q_ingredient in ingredient_text:
+                tf = 1
                 
             # BM25 scoring formula
             idf = self.ingredient_idf.get(q_ingredient, 0)
+            if idf == 0:  # If ingredient not in IDF, give it a default value
+                idf = 1.0
             numerator = tf * (self.k1 + 1)
             denominator = tf + self.k1 * (1 - self.b + self.b * doc_length / self.avgdl)
             score += idf * numerator / denominator
             
         return score
 
-    def search(self, ingredients: List[str], top_k: int = 5) -> List[Dict]:
+    def search(self, ingredients: List[str], top_k: int = None) -> List[Dict]:
         """Search for recipes matching given ingredients"""
         if not ingredients:
             return []
+            
+        # Print debug info
+        print(f"Total recipes in dataset: {len(self.recipes_df)}")
             
         # Calculate scores for all recipes
         scored_recipes = []
@@ -88,21 +93,29 @@ class RecipeSearchEngine:
             score = self._bm25_score(ingredients, recipe)
             recipe_ingredients = self._get_ingredients_list(recipe['ingredients'])
             
-            # Count partial matches
+            # Count partial matches - make this more lenient
             matching_count = sum(1 for ing in ingredients 
                                if any(ing.lower() in recipe_ing.lower() 
                                    for recipe_ing in recipe_ingredients))
             
-            if matching_count > 0:  # Include recipes with any matches
+            # Include recipe if it has any ingredient match
+            if any(ing.lower() in ' '.join(recipe_ingredients).lower() for ing in ingredients):
                 scored_recipes.append({
                     'title': recipe['title'],
                     'ingredients': recipe_ingredients,
-                    'directions': json.loads(recipe['directions']),
+                    'directions': recipe['directions'],
+                    'link': recipe['link'],
                     'source': recipe['source'],
                     'score': score,
                     'matching_ingredients': matching_count
                 })
         
-        # Sort by score and return top k
-        scored_recipes.sort(key=lambda x: (x['matching_ingredients'], x['score']), reverse=True)
-        return scored_recipes[:top_k]
+        # Debug print
+        print(f"Found {len(scored_recipes)} recipes with matches")
+        
+        # Sort by score and return results
+        scored_recipes.sort(key=lambda x: (-x['matching_ingredients'], -x['score']))
+        
+        if top_k:
+            return scored_recipes[:top_k]
+        return scored_recipes

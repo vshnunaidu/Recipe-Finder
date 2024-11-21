@@ -3,7 +3,7 @@ import sys
 import unittest
 import json
 
-# Add the src directory to the Python path
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.recipe_search import RecipeSearchEngine
@@ -29,7 +29,7 @@ class TestRecipeSearch(unittest.TestCase):
                 print(f"Raw ingredients string: {recipe['ingredients']}")
 
     def test_basic_search(self):
-        # Test with ingredients we can see in the debug output
+        # Test with ingredients (in this case chicken&mushroom)
         search_terms = ['chicken', 'mushroom']
         print(f"\nSearching for: {search_terms}")
         
@@ -38,7 +38,7 @@ class TestRecipeSearch(unittest.TestCase):
         print(f"\nNumber of results found: {len(results)}")
         
         if len(results) == 0:
-            # Print some debug information about the search process
+            # Print debug info
             print("\nDebug: Checking first few recipes for matches...")
             for _, recipe in self.search_engine.recipes_df.head().iterrows():
                 score = self.search_engine._bm25_score(search_terms, recipe)
@@ -49,7 +49,7 @@ class TestRecipeSearch(unittest.TestCase):
         
         self.assertTrue(len(results) > 0, "No results found in search")
         
-        # Print results if any found
+        # Print results if found
         if len(results) > 0:
             print("\nSearch Results:")
             for i, result in enumerate(results, 1):
