@@ -12,7 +12,7 @@ cd RecipeFind
 
 Install the required packages:
 pip install pandas numpy
-
+pip install streamlit
 Make sure it is the following directory structure:
 
 CopyRecipeFind/
