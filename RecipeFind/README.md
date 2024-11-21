@@ -27,7 +27,7 @@ CopyRecipeFind/
 └── test_run.py
 
 run test by running: 
-python -m tests.test_search
+streamlit run app.py
 
 run sample search by running
 python test_run.py
